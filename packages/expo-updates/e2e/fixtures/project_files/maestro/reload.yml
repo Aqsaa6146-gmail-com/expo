@@ -1,0 +1,27 @@
+appId: dev.expo.updatese2e
+onFlowStart:
+  - runScript: ./maestroUpdatesApi.js
+  - evalScript:
+      script:  ${output.api.restartUpdatesServer()}
+      label: Restart updates server
+---
+- launchApp
+- assertVisible:
+    label: Ensure app is visible
+    id: updateString
+    text: test
+- tapOn: "reload"
+- evalScript:
+    script: ${output.api.delay(2000)}
+    label: Delay for 2 seconds
+- assertVisible:
+    label: Ensure app is visible after reload
+    id: updateString
+    text: test
+- stopApp
+- launchApp
+- assertVisible:
+    label: Ensure app is visible after stop and launch
+    id: updateString
+    text: test
+- stopApp

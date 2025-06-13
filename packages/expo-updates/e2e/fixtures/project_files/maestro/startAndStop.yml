@@ -1,0 +1,16 @@
+appId: dev.expo.updatese2e
+---
+- launchApp
+- assertVisible:
+    label: Ensure app is visible
+    id: updateString
+    text: test
+- stopApp
+- launchApp
+- assertVisible:
+    label: Ensure app is visible after stop and launch
+    id: updateString
+    text: test
+- stopApp
+
+
