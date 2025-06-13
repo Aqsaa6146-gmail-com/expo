@@ -314,6 +314,10 @@ async function preparePackageJson(
   // Additional scripts and dependencies for Detox testing
   const extraScripts = configureE2E
     ? {
+        'maestro:android:debug:build': 'cd android; ./gradlew :app:assembleDebug; cd ..',
+        'maestro:android:debug:install':
+          'adb install android/app/build/outputs/apk/debug/app-debug.apk',
+        'maestro:android:debug:uninstall': 'adb uninstall dev.expo.updatese2e',
         'detox:android:debug:build': 'detox build -c android.debug',
         'detox:android:debug:test': 'detox test -c android.debug',
         'detox:android:release:build': 'detox build -c android.release',
@@ -938,7 +942,16 @@ export async function setupE2EAppAsync(
 ) {
   await copyCommonFixturesToProject(
     projectRoot,
-    ['tsconfig.json', '.detoxrc.json', 'eas.json', 'eas-hooks', 'e2e', 'includedAssets', 'scripts'],
+    [
+      'tsconfig.json',
+      '.detoxrc.json',
+      'eas.json',
+      'eas-hooks',
+      'e2e',
+      'maestro',
+      'includedAssets',
+      'scripts',
+    ],
     { appJsFileName: 'App.tsx', repoRoot, isTV }
   );
 
@@ -989,7 +1002,16 @@ export async function setupUpdatesDisabledE2EAppAsync(
 ) {
   await copyCommonFixturesToProject(
     projectRoot,
-    ['tsconfig.json', '.detoxrc.json', 'eas.json', 'eas-hooks', 'e2e', 'includedAssets', 'scripts'],
+    [
+      'tsconfig.json',
+      '.detoxrc.json',
+      'eas.json',
+      'eas-hooks',
+      'e2e',
+      'maestro',
+      'includedAssets',
+      'scripts',
+    ],
     {
       appJsFileName: 'App-updates-disabled.tsx',
       repoRoot,
@@ -1016,7 +1038,16 @@ export async function setupUpdatesErrorRecoveryE2EAppAsync(
 ) {
   await copyCommonFixturesToProject(
     projectRoot,
-    ['tsconfig.json', '.detoxrc.json', 'eas.json', 'eas-hooks', 'e2e', 'includedAssets', 'scripts'],
+    [
+      'tsconfig.json',
+      '.detoxrc.json',
+      'eas.json',
+      'eas-hooks',
+      'e2e',
+      'maestro',
+      'includedAssets',
+      'scripts',
+    ],
     { appJsFileName: 'App.tsx', repoRoot, isTV: false }
   );
 
@@ -1046,6 +1077,7 @@ export async function setupUpdatesFingerprintE2EAppAsync(
       'eas.json',
       'eas-hooks',
       'e2e',
+      'maestro',
       'includedAssets',
       'scripts',
     ],
@@ -1071,7 +1103,16 @@ export async function setupUpdatesStartupE2EAppAsync(
 ) {
   await copyCommonFixturesToProject(
     projectRoot,
-    ['tsconfig.json', '.detoxrc.json', 'eas.json', 'eas-hooks', 'e2e', 'includedAssets', 'scripts'],
+    [
+      'tsconfig.json',
+      '.detoxrc.json',
+      'eas.json',
+      'eas-hooks',
+      'e2e',
+      'maestro',
+      'includedAssets',
+      'scripts',
+    ],
     { appJsFileName: 'App.tsx', repoRoot, isTV: false }
   );
 
@@ -1094,7 +1135,16 @@ export async function setupUpdatesBrickingMeasuresDisabledE2EAppAsync(
 ) {
   await copyCommonFixturesToProject(
     projectRoot,
-    ['tsconfig.json', '.detoxrc.json', 'eas.json', 'eas-hooks', 'e2e', 'includedAssets', 'scripts'],
+    [
+      'tsconfig.json',
+      '.detoxrc.json',
+      'eas.json',
+      'eas-hooks',
+      'e2e',
+      'maestro',
+      'includedAssets',
+      'scripts',
+    ],
     { appJsFileName: 'App.tsx', repoRoot, isTV: false }
   );
 
@@ -1117,7 +1167,16 @@ export async function setupUpdatesDevClientE2EAppAsync(
 ) {
   await copyCommonFixturesToProject(
     projectRoot,
-    ['tsconfig.json', '.detoxrc.json', 'eas.json', 'eas-hooks', 'e2e', 'includedAssets', 'scripts'],
+    [
+      'tsconfig.json',
+      '.detoxrc.json',
+      'eas.json',
+      'eas-hooks',
+      'e2e',
+      'maestro',
+      'includedAssets',
+      'scripts',
+    ],
     { appJsFileName: 'App.tsx', repoRoot, isTV: false }
   );
 
