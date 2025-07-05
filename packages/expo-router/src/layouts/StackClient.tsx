@@ -17,9 +17,12 @@ import {
   createNativeStackNavigator,
 } from '@react-navigation/native-stack';
 import { nanoid } from 'nanoid/non-secure';
-import { ComponentProps } from 'react';
+import { ComponentProps, useMemo } from 'react';
+import { StackAnimationTypes } from 'react-native-screens';
 
 import { withLayoutContext } from './withLayoutContext';
+import { useLinkPreviewContext } from '../link/preview/LinkPreviewContext';
+import { RouterModal } from '../modal/web/ModalStack.web';
 import { SingularOptions, getSingularId } from '../useScreens';
 import { Protected } from '../views/Protected';
 
@@ -27,16 +30,60 @@ type GetId = NonNullable<RouterConfigOptions['routeGetIdList'][string]>;
 
 const NativeStackNavigator = createNativeStackNavigator().Navigator;
 
+/**
+ * We extend NativeStackNavigationOptions with our custom props
+ * to allow for several extra props to be used on web, like modalWidth
+ */
+export type ExtendedStackNavigationOptions = NativeStackNavigationOptions & {
+  webModalStyle?: {
+    /**
+     * Override the width of the modal (px or percentage). Only applies on web platform.
+     * @platform web
+     */
+    width?: number | string;
+    /**
+     * Override the height of the modal (px or percentage). Applies on web desktop.
+     * @platform web
+     */
+    height?: number | string;
+    /**
+     * Minimum height of the desktop modal (px or percentage). Overrides the default 640px clamp.
+     * @platform web
+     */
+    minHeight?: number | string;
+    /**
+     * Minimum width of the desktop modal (px or percentage). Overrides the default 580px.
+     * @platform web
+     */
+    minWidth?: number | string;
+    /**
+     * Override the border of the desktop modal (any valid CSS border value, e.g. '1px solid #ccc' or 'none').
+     * @platform web
+     */
+    border?: string;
+    /**
+     * Override the overlay background color (any valid CSS color or rgba/hsla value).
+     * @platform web
+     */
+    overlayBackground?: string;
+  };
+};
+
 const RNStack = withLayoutContext<
-  NativeStackNavigationOptions,
+  ExtendedStackNavigationOptions,
   typeof NativeStackNavigator,
   StackNavigationState<ParamListBase>,
   NativeStackNavigationEventMap
 >(NativeStackNavigator);
 
-function isStackAction(
-  action: NavigationAction
-): action is StackActionType | Extract<CommonNavigationAction, { type: 'NAVIGATE' }> {
+type RNNavigationAction = Extract<CommonNavigationAction, { type: 'NAVIGATE' }>;
+type ExpoNavigationAction = Omit<RNNavigationAction, 'payload'> & {
+  payload: RNNavigationAction['payload'] & {
+    previewKey?: string;
+  };
+};
+
+function isStackAction(action: NavigationAction): action is StackActionType | ExpoNavigationAction {
   return (
     action.type === 'PUSH' ||
     action.type === 'NAVIGATE' ||
@@ -45,6 +92,9 @@ function isStackAction(
     action.type === 'REPLACE'
   );
 }
+
+const isPreviewAction = (action: NavigationAction): action is ExpoNavigationAction =>
+  !!action.payload && 'previewKey' in action.payload && !!action.payload.previewKey;
 
 /**
  * React Navigation matches a screen by its name or a 'getID' function that uniquely identifies a screen.
@@ -129,6 +179,14 @@ export const stackRouterOverride: NonNullable<ComponentProps<typeof RNStack>['UN
             }
           }
 
+          // START FORK
+          if (isPreviewAction(action)) {
+            route = state.preloadedRoutes.find(
+              (route) => route.name === action.payload.name && id === route.key
+            );
+          }
+          // END FORK
+
           if (!route) {
             route = state.preloadedRoutes.find(
               (route) =>
@@ -201,7 +259,7 @@ export const stackRouterOverride: NonNullable<ComponentProps<typeof RNStack>['UN
               // If the routes length is the same as the state routes length, then we are navigating to a new route.
               // Otherwise we are replacing an existing route.
               const key =
-                routes.length === state.routes.length
+                routes.length === state.routes.length && !isPreviewAction(action)
                   ? `${action.payload.name}-${nanoid()}`
                   : route.key;
 
@@ -334,7 +392,28 @@ function filterSingular<
 
 const Stack = Object.assign(
   (props: ComponentProps<typeof RNStack>) => {
-    return <RNStack {...props} UNSTABLE_router={stackRouterOverride} />;
+    const isWeb = process.env.EXPO_OS === 'web';
+    const { isPreviewOpen } = useLinkPreviewContext();
+    const screenOptions = useMemo(() => {
+      if (isPreviewOpen) {
+        return disableAnimationInScreenOptions(props.screenOptions);
+      }
+      return props.screenOptions;
+    }, [props.screenOptions, isPreviewOpen]);
+
+    if (isWeb) {
+      return (
+        <RouterModal
+          {...props}
+          screenOptions={screenOptions}
+          UNSTABLE_router={stackRouterOverride}
+        />
+      );
+    } else {
+      return (
+        <RNStack {...props} screenOptions={screenOptions} UNSTABLE_router={stackRouterOverride} />
+      );
+    }
   },
   {
     Screen: RNStack.Screen as (
@@ -343,6 +422,33 @@ const Stack = Object.assign(
     Protected,
   }
 );
+
+type NativeStackScreenOptions = ComponentProps<typeof RNStack>['screenOptions'];
+
+function disableAnimationInScreenOptions(
+  options: NativeStackScreenOptions | undefined
+): NativeStackScreenOptions {
+  const animationNone: StackAnimationTypes = 'none';
+  if (options) {
+    if (typeof options === 'function') {
+      const newOptions: typeof options = (...args) => {
+        const oldResult = options(...args);
+        return {
+          ...oldResult,
+          animation: animationNone,
+        };
+      };
+      return newOptions;
+    }
+    return {
+      ...options,
+      animation: animationNone,
+    };
+  }
+  return {
+    animation: animationNone,
+  };
+}
 
 export default Stack;
 
